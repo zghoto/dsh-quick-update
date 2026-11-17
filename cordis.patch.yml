@@ -1,0 +1,6 @@
+# dsh-quick-update bundle patch: mounts this package in a profile's layer stack.
+# The Host half contributes no runtime service; the Client half registers the
+# "更新" tab of the Plugins page through the plugins.tab slot.
+- insert:
+    - id: quick-update
+      name: 'dsh-quick-update'

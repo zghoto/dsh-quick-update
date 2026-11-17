@@ -1,0 +1,56 @@
+{
+  "name": "dsh-quick-update",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Row-level check, update and uninstall controls inside the DeepSeek Harness Plugins page — including Git-source plugins.",
+  "icon": "icon.svg",
+  "type": "module",
+  "main": "lib/index.js",
+  "license": "MIT",
+  "author": "zghoto",
+  "keywords": [
+    "dsh-plugin",
+    "dsh",
+    "deepseek-harness",
+    "plugin",
+    "update",
+    "plugin-manager"
+  ],
+  "homepage": "https://github.com/zghoto/dsh-quick-update",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zghoto/dsh-quick-update.git"
+  },
+  "bugs": {
+    "url": "https://github.com/zghoto/dsh-quick-update/issues"
+  },
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "LICENSE"
+  ],
+  "dsh": {
+    "manifestVersion": 1,
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-api-remotes",
+        "@deepseek-ai/dsh-client-locale"
+      ]
+    }
+  }
+}

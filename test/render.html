@@ -15,7 +15,7 @@
     const end = source.indexOf('\n        const paintUpdateCounts', start);
     const body = source.slice(start, end);
     // The helper the block calls, which the source declares before it.
-    const helperStart = source.indexOf('const nativeRefreshChild = (toolbar) =>');
+    const helperStart = source.indexOf('const isOwnControl = (element) => (');
     const helperEnd = source.indexOf('\n        const onNativeRefresh', helperStart);
     const helper = source.slice(helperStart, helperEnd);
     const setAttr = (element, name, value) => {
@@ -43,6 +43,7 @@
       concurrencyButton: '并发数量',
       concurrencyAll: '全部（不限并发）',
       concurrencyAtMost: '最多 {count} 个',
+      concurrencyHint: '同时检查的插件数量。留空或填 0 表示全部一起检查，最快；网络吃不消时可以填一个更小的数字。',
       updateAll: '更新全部',
       updateAllCheckFirst: '点击后先检查全部插件',
     };

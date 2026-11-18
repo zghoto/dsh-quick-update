@@ -23,6 +23,7 @@ for (const file of [
   'update.test.mjs',
   'parallel.test.mjs',
   'toolbar.test.mjs',
+  'input.test.mjs',
   'delay.test.mjs',
   'render.test.mjs',
   'uninstall.test.mjs',

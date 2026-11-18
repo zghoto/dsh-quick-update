@@ -96,17 +96,27 @@ try {
   assert.ok(input, 'the concurrency input must be rendered');
   assert.ok(input[0].includes('type="number"'), 'the control must be a number input');
   assert.ok(input[0].includes('min="0"'), 'the input must refuse anything below zero');
+  assert.ok(input[0].includes('placeholder="0"'), 'the input must show a zero as its placeholder');
   assert.ok(input[0].includes('title='), 'the input must say what it does in its title');
+  /* It is empty when there is no limit. */
+  assert.ok(!/value="[0-9]/.test(input[0]), 'the input must be empty when there is no limit');
 
-  /* It stands on its own, not joined to the page's refresh button. */
+  /* The mark explains the field on hover. */
+  const mark = /<span[^>]*qu-concurrency-mark[^>]*>([\s\S]*?)<\/span>/.exec(output);
+  assert.ok(mark, 'the mark must be rendered');
+  assert.ok(mark[1].includes('!'), 'the mark must be an exclamation mark');
+  assert.ok(mark[0].includes('title="'), 'the mark must explain the field on hover');
+
+  /* The input sits right after the page's refresh button. */
   const toolbar = /<header[^>]*data-plugin-toolbar[^>]*>([\s\S]*?)<\/header>/.exec(output);
   assert.ok(toolbar, 'the toolbar must be rendered');
-  const children = [...toolbar[1].matchAll(/<(?:button|input)[^>]*>/g)];
-  const inputIndex = children.findIndex((match) => match[0].includes('data-quick-update-action="concurrency"'));
+  /* The controls, in the order they stand in the toolbar. */
+  const controls = [...toolbar[1].matchAll(/<(?:button|input)[^>]*>/g)].map((match) => match[0]);
+  const inputIndex = controls.findIndex((match) => match.includes('data-quick-update-action="concurrency"'));
   assert.ok(inputIndex >= 0, 'the concurrency input must be in the toolbar');
-  const refreshIndex = children.findIndex((match) => !match[0].includes('data-quick-update-action'));
+  const refreshIndex = controls.findIndex((match) => match.includes('class="addButton"'));
   assert.ok(refreshIndex >= 0, 'the page\'s own refresh button must be there');
-  assert.notEqual(inputIndex, refreshIndex + 1, 'the input must stand apart from the refresh button');
+  assert.equal(inputIndex, refreshIndex + 1, 'the input must sit right after the refresh button');
 
   console.log('toolbar render: all checks passed');
 } finally {

@@ -58,8 +58,8 @@ assert.ok(
   'the mark must be an exclamation mark',
 );
 assert.ok(
-  inputBlock.includes("mark.title = t('concurrencyHint')"),
-  'the mark must explain the field on hover',
+  inputBlock.includes("mark.setAttribute('aria-label', hint)"),
+  'the mark must say what it means',
 );
 assert.ok(
   styles.includes('.qu-concurrency-mark'),

@@ -105,7 +105,8 @@ try {
   const mark = /<span[^>]*qu-concurrency-mark[^>]*>([\s\S]*?)<\/span>/.exec(output);
   assert.ok(mark, 'the mark must be rendered');
   assert.ok(mark[1].includes('!'), 'the mark must be an exclamation mark');
-  assert.ok(mark[0].includes('title="'), 'the mark must explain the field on hover');
+  assert.ok(mark[0].includes('aria-label="'), 'the mark must say what it means');
+  assert.ok(mark[0].includes('tabindex="0"'), 'the mark must be reachable by the keyboard');
 
   /* The input sits right after the page's refresh button. */
   const toolbar = /<header[^>]*data-plugin-toolbar[^>]*>([\s\S]*?)<\/header>/.exec(output);

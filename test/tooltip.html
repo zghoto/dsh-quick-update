@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="zh">
+<head><meta charset="utf-8"><title>the mark's bubble</title></head>
+<body>
+  <header data-plugin-toolbar>
+    <span class="updatesNote">3 个插件可更新</span>
+    <button type="button" class="addButton">刷新</button>
+  </header>
+  <script type="module">
+    const source = await (await fetch('/lib/client.js')).text();
+    const start = source.indexOf('const paintToolbar = (toolbar) =>');
+    const end = source.indexOf('\n        const paintUpdateCounts', start);
+    const body = source.slice(start, end);
+    const helperStart = source.indexOf('const isOwnControl = (element) => (');
+    const helperEnd = source.indexOf('\n        const onNativeRefresh', helperStart);
+    const helper = source.slice(helperStart, helperEnd);
+
+    /* The bubble, taken from the source, so it is the real one. */
+    const bubbleStart = source.indexOf('let bubble = null;');
+    const bubbleEnd = source.indexOf('const openConcurrencyMenu = (anchor) => {');
+    const bubbleBlock = source.slice(bubbleStart, bubbleEnd);
+
+    const COPY = {
+      concurrencyButton: '并发数量',
+      concurrencyAll: '全部（不限并发）',
+      concurrencyAtMost: '最多 {count} 个',
+      concurrencyHint: '同时检查的插件数量。留空或填 0 表示全部一起检查，最快；网络吃不消时可以填一个更小的数字。',
+      updateAll: '更新全部',
+      updateAllCheckFirst: '点击后先检查全部插件，有更新再逐个安装',
+    };
+    const setText = (element, text) => { element.textContent = text; };
+    const setDisabled = (element, disabled) => { element.disabled = disabled; };
+    const setAttr = (element, name, value) => {
+      if (value === null) element.removeAttribute(name);
+      else element.setAttribute(name, value);
+    };
+
+    const factory = new Function(
+      'checkConcurrency', 't', 'setAttr', 'rowNames', 'isUpdatable', 'knownListing',
+      'batchRunning', 'clickRefresh', 'paintUpdateCounts', 'batch', 'setText',
+      'setDisabled', 'mode', 'readConcurrencyInput', 'writeCheckConcurrency',
+      'CONCURRENCY_INPUT_ID',
+      helper + '\n' + bubbleBlock + '\n' + body + '\nreturn paintToolbar;',
+    );
+    factory(
+      0,
+      (key) => COPY[key] ?? key,
+      setAttr,
+      () => [],
+      () => false,
+      () => ({ phase: 'unknown' }),
+      () => false,
+      () => {},
+      () => {},
+      null,
+      setText,
+      setDisabled,
+      'page',
+      (input) => Number(input.value) || 0,
+      () => {},
+      'dsh-quick-update-concurrency',
+    )(
+      document.querySelector('[data-plugin-toolbar]'),
+    );
+
+    /* The bubble is shown on hover, so the check hovers the mark. */
+    const mark = document.querySelector('.qu-concurrency-mark');
+    mark.dispatchEvent(new MouseEvent('mouseenter'));
+  </script>
+</body>
+</html>

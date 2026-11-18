@@ -24,6 +24,8 @@ for (const file of [
   'parallel.test.mjs',
   'toolbar.test.mjs',
   'input.test.mjs',
+  'tooltip.test.mjs',
+  'tooltip.render.test.mjs',
   'delay.test.mjs',
   'render.test.mjs',
   'uninstall.test.mjs',

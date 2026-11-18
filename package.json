@@ -1,6 +1,6 @@
 {
   "name": "dsh-quick-update",
-  "version": "0.2.7",
+  "version": "0.3.0",
   "private": true,
   "description": "Row-level check, update and uninstall controls inside the DeepSeek Harness Plugins page — including Git-source plugins.",
   "icon": "icon.svg",

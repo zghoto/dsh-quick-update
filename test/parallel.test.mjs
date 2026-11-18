@@ -1,9 +1,11 @@
 /**
- * Checks that the page's refresh checks every plugin at once.
+ * Checks that the page's refresh checks every plugin at once, and that the
+ * number of checks running at the same time is the person's choice.
  *
  * The check is a behaviour check, not a source check: the real helper is
  * taken from the source and run against a set of names whose work is slow
- * enough to tell a parallel run from a sequential one.
+ * enough to tell a parallel run from a sequential one, and against each
+ * bound the setting offers.
  */
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
@@ -40,49 +42,88 @@ function extract(start) {
 /* The helper that runs the work over every name. */
 const helper = extract('const inParallel = async (names, run) =>');
 
-/* The number of checks that may run at the same time. */
-const concurrency = /const CHECK_CONCURRENCY = (\d+);/.exec(source);
-assert.ok(concurrency, 'the concurrency limit must be named');
-assert.ok(Number(concurrency[1]) >= 2, 'the concurrency limit must allow more than one');
+/* The setting that chooses the bound. */
+const defaultBound = /const DEFAULT_CHECK_CONCURRENCY = (\d+);/.exec(source);
+assert.ok(defaultBound, 'the default bound must be named');
+assert.equal(defaultBound[1], '0', 'the default must let every row run at once');
 
-/* The helper is run as the real code. */
-const limit = /const CHECK_CONCURRENCY = (\d+);/.exec(source);
-assert.ok(limit, 'the concurrency limit must be named');
-const factory = new Function(`const CHECK_CONCURRENCY = ${limit[1]};\n${helper}\nreturn inParallel;`);
-const inParallel = factory();
+/* The bound is the person's choice, and it is kept in this browser. */
+assert.ok(
+  source.includes("const CHECK_CONCURRENCY_KEY = 'dsh-quick-update.check-concurrency';"),
+  'the choice must be kept under a named key',
+);
+assert.ok(source.includes('readCheckConcurrency'), 'the saved choice must be read');
+assert.ok(source.includes('writeCheckConcurrency'), 'the chosen bound must be saved');
 
-/* ---- the work runs at the same time, not one after another ---- */
+/* The helper is run as the real code, with the bound under the test's
+   control. */
+const factory = new Function(`
+  let checkConcurrency = 0;
+  ${helper}
+  return { run: inParallel, setBound: (value) => { checkConcurrency = value; } };
+`);
+const { run, setBound } = factory();
+
+/**
+ * Run the helper and report what it did.
+ *
+ * @param {number} bound - the bound to set.
+ * @param {string[]} names - the names to check.
+ * @returns the peak number of checks that ran at once.
+ */
+async function peakOf(bound, names) {
+  setBound(bound);
+  let running = 0;
+  let peak = 0;
+  const order = [];
+  await run(names, async (name) => {
+    running += 1;
+    peak = Math.max(peak, running);
+    order.push(`start:${name}`);
+    await new Promise((resolve) => { setTimeout(resolve, 20); });
+    order.push(`end:${name}`);
+    running -= 1;
+  });
+  return { peak, order };
+}
 
 const names = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-let running = 0;
-let peak = 0;
-const order = [];
 
-await inParallel(names, async (name) => {
-  running += 1;
-  peak = Math.max(peak, running);
-  order.push(`start:${name}`);
-  await new Promise((resolve) => { setTimeout(resolve, 20); });
-  order.push(`end:${name}`);
-  running -= 1;
-});
+/* ---- the default lets every row run at once ---- */
 
-assert.ok(peak > 1, `the checks must run together, the peak concurrency was ${peak}`);
-assert.ok(peak <= Number(concurrency[1]), `the peak ${peak} must not exceed the limit ${concurrency[1]}`);
-assert.equal(order[0], 'start:a', 'the first name starts first');
+const all = await peakOf(0, names);
+assert.equal(all.peak, names.length, 'the default must let every row run at once');
 assert.ok(
-  order.indexOf('end:a') > order.indexOf('start:c'),
+  all.order.indexOf('end:a') > all.order.indexOf('start:c'),
   'a later name must start before the first one ends',
 );
 
-/* ---- every name is answered ---- */
+/* ---- a chosen bound is honoured ---- */
 
-const answers = await inParallel(['x', 'y'], async (name) => `${name}!`);
+const two = await peakOf(2, names);
+assert.equal(two.peak, 2, 'the chosen bound must be the peak');
+assert.ok(
+  two.order.indexOf('end:a') < two.order.indexOf('start:c'),
+  'with a bound of two, the third name waits for the first',
+);
+
+const one = await peakOf(1, names);
+assert.equal(one.peak, 1, 'a bound of one must check the rows one after another');
+
+/* ---- a bound above the number of rows is the same as letting them all run ---- */
+
+const many = await peakOf(100, names);
+assert.equal(many.peak, names.length, 'a bound above the row count must not hold a row back');
+
+/* ---- every name is answered, in order ---- */
+
+setBound(0);
+const answers = await run(['x', 'y'], async (name) => `${name}!`);
 assert.deepEqual(answers, ['x!', 'y!'], 'every name must keep its own answer');
 
 /* ---- an empty list is fine ---- */
 
-assert.deepEqual(await inParallel([], async () => 'never'), [], 'an empty list must answer nothing');
+assert.deepEqual(await run([], async () => 'never'), [], 'an empty list must answer nothing');
 
 /* ---- the refresh uses the parallel helper ---- */
 
@@ -112,6 +153,32 @@ assert.ok(
 assert.ok(
   batch.includes('await inParallel(gitUnknown, (name) => checkGit(name))'),
   'the batch must check the Git rows together',
+);
+
+/* ---- the setting is offered from the page's toolbar ---- */
+
+const toolbar = extract('const paintToolbar = (toolbar) =>');
+assert.ok(
+  toolbar.includes("data-quick-update-action', 'concurrency'"),
+  'the toolbar must carry the arrow that opens the setting',
+);
+assert.ok(
+  toolbar.includes('openConcurrencyMenu(arrow)'),
+  'the arrow must open the menu',
+);
+
+const menu = extract('const openConcurrencyMenu = (anchor) =>');
+assert.ok(
+  menu.includes('CHECK_CONCURRENCY_CHOICES'),
+  'the menu must offer the bounds',
+);
+assert.ok(
+  menu.includes('writeCheckConcurrency(value)'),
+  'choosing a bound must save it',
+);
+assert.ok(
+  menu.includes("t('concurrencyAll')"),
+  'the menu must offer "all"',
 );
 
 console.log('parallel check: all checks passed');

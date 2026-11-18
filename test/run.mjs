@@ -22,6 +22,8 @@ for (const file of [
   'client.test.mjs',
   'update.test.mjs',
   'parallel.test.mjs',
+  'toolbar.test.mjs',
+  'render.test.mjs',
   'uninstall.test.mjs',
   'integration.test.mjs',
 ]) {

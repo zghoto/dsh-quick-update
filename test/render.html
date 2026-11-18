@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh">
+<head><meta charset="utf-8"><title>toolbar arrow</title></head>
+<body>
+  <!-- The page's own shape: a toolbar holding the refresh button. -->
+  <header data-plugin-toolbar>
+    <span class="updatesNote">3 个插件可更新</span>
+    <button type="button" class="addButton">刷新</button>
+  </header>
+  <script type="module">
+    // The plugin's own painting of the toolbar, taken from the real source.
+    const source = await (await fetch('/lib/client.js')).text();
+    const start = source.indexOf('const paintToolbar = (toolbar) =>');
+    // The block ends where the next top-level function begins.
+    const end = source.indexOf('\n        const paintUpdateCounts', start);
+    const body = source.slice(start, end);
+    // The helper the block calls, which the source declares before it.
+    const helperStart = source.indexOf('const nativeRefreshChild = (toolbar) =>');
+    const helperEnd = source.indexOf('\n        const onNativeRefresh', helperStart);
+    const helper = source.slice(helperStart, helperEnd);
+    const setAttr = (element, name, value) => {
+      if (value === null) element.removeAttribute(name);
+      else element.setAttribute(name, value);
+    };
+    const nativeRefreshChild = (toolbar) => {
+      for (const child of toolbar.children) {
+        if (child.hasAttribute('data-quick-update-action')) continue;
+        if (child.tagName === 'BUTTON' || child.querySelector('button') !== null) return child;
+      }
+      return null;
+    };
+    let checkConcurrency = 0;
+    const t = (key, vars) => key;
+    const openConcurrencyMenu = (anchor) => { window.__opened = true; };
+    const paintUpdateCounts = (toolbar) => {};
+    const rowNames = () => [];
+    const isUpdatable = () => false;
+    const knownListing = () => ({ phase: 'unknown' });
+    const batchRunning = () => false;
+    const clickRefresh = () => {};
+    const setText = (element, text) => { element.textContent = text; };
+    const setDisabled = (element, disabled) => { element.disabled = disabled; };
+    // The bound and the copy are declared inside the plugin's own scope, so
+    // they are passed in.
+    new Function(
+      'checkConcurrency',
+      't',
+      'setAttr',
+      'rowNames',
+      'isUpdatable',
+      'knownListing',
+      'batchRunning',
+      'clickRefresh',
+      'paintUpdateCounts',
+      'batch',
+      'setText',
+      'setDisabled',
+      'mode',
+      helper + '\n' + body + '\nreturn paintToolbar;',
+    )(
+      0,
+      (key) => key,
+      (element, name, value) => {
+        if (value === null) element.removeAttribute(name);
+        else element.setAttribute(name, value);
+      },
+      () => [],
+      () => false,
+      () => ({ phase: 'unknown' }),
+      () => false,
+      () => {},
+      () => {},
+      null,
+      (element, text) => { element.textContent = text; },
+      (element, disabled) => { element.disabled = disabled; },
+      'page',
+    )(
+      document.querySelector('[data-plugin-toolbar]'),
+    );
+    const arrow = document.querySelector('[data-quick-update-action="concurrency"]');
+    window.__result = {
+      found: arrow !== null,
+      text: arrow === null ? null : arrow.textContent,
+      title: arrow === null ? null : arrow.title,
+      action: arrow === null ? null : arrow.getAttribute('data-quick-update-action'),
+      // The arrow must sit right after the page's refresh button.
+      position: arrow === null ? null : Array.from(arrow.parentNode.children).indexOf(arrow),
+      refreshIndex: Array.from(document.querySelector('[data-plugin-toolbar]').children)
+        .findIndex((c) => c.tagName === 'BUTTON' && !c.hasAttribute('data-quick-update-action')),
+    };
+  </script>
+</body>
+</html>

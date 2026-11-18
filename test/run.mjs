@@ -16,7 +16,15 @@ for (const file of ['lib/index.js', 'lib/client.js']) {
   console.log(`syntax ok: ${file}`);
 }
 
-for (const file of ['host.test.mjs', 'host-semantics.test.mjs', 'client.test.mjs', 'update.test.mjs', 'integration.test.mjs']) {
+for (const file of [
+  'host.test.mjs',
+  'host-semantics.test.mjs',
+  'client.test.mjs',
+  'update.test.mjs',
+  'parallel.test.mjs',
+  'uninstall.test.mjs',
+  'integration.test.mjs',
+]) {
   const out = execFileSync(process.execPath, [join(here, file)], { stdio: 'pipe' });
   process.stdout.write(out);
 }

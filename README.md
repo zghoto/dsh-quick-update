@@ -12,12 +12,12 @@
 ## 功能
 
 - **行内按钮**（开关左侧）：`检查` `更新 ▾` `卸载`
-  - `检查`：只查这一个插件（registry 或 Git 源）；
+  - `检查`：只查这一个插件（registry 或 Git 源）；卸载进行中该行不可再检查；
   - `更新`：有可用版本时蓝色高亮；右侧 `▾` 打开版本弹层，列出所有可安装版本（含 `latest` / `预发布` / `已弃用` / `需要更新 DSH` 标签、发布日期、安装来源），选哪个就装哪个；
-  - `卸载`：红色，两次确认（第一下变"确认卸载"），调用 Host 官方卸载逻辑。
+  - `卸载`：红色，两次确认（第一下变"确认卸载"），调用 Host 官方卸载逻辑。卸载期间该行的 `检查` 按钮变灰——插件正在被移除，已经没有什么可查的了。
 - **工具栏 `更新全部`**：逐个串行更新，显示 `更新中 n/N`。**Git 安装的插件也包含在内**（从新提交重装，失败自动装回原 commit）；按钮悬停会说明其中几个是 Git 重装。一个插件更新失败不会中断其余插件，失败的名字和原因会显示在按钮上，按钮可以再点一次重试。
 - **提交类更新的确认**：当待更新项里包含「只有新 Git 提交、没有发布新版本号」的插件时，会先弹一个确认：`全部更新` / `跳过这些插件` / `取消`。选「跳过」则只更新有正式版本的插件。
-- **跟随页面刷新**：点页面自带的 `刷新` 会同时触发本插件的逐行检查，每行依次显示「检查中…」，完成后按钮变蓝；不会在进入页面时偷偷检查。
+- **跟随页面刷新**：点页面自带的 `刷新` 会触发本插件的逐行检查，**所有插件同时检查**（不是排队一个个来），每行显示「检查中…」，完成后按钮变蓝；不会在进入页面时偷偷检查。
 - **名字右侧状态标签**：`最新`（灰）/ `可更新`（蓝，页面没自己打标签时补位）/ `可更新但最新版不兼容当前版本 DSH`（黄，悬停给出所需依赖）。
 - **页面模式下自动关闭原生更新框**：页面自己的更新确认框是带模糊遮罩的模态，插件在更新结束后（成功或失败）会主动关闭它，避免整页一直模糊。
 - **合并计数**：页面自带的「N 个插件可更新」只统计能装的新版本；只要存在 Git 提交更新，本插件就把那句话替换为合并口径：`N 个插件可更新（含 M 个 Git 新提交）`（灰色 native 文案会被隐藏，悬停解释口径），`更新全部` 的数量与它一致。
@@ -80,12 +80,16 @@ page, including Git-installed plugins.
 
 - `检查` checks one plugin; `更新 ▾` updates to the chosen version (all
   installable versions with tags, dates and their source); `卸载` removes the
-  bundle through the Host's own removal path after a second confirmation.
+  bundle through the Host's own removal path after a second confirmation. The
+  row's `检查` button is disabled while the removal runs, because there is
+  nothing left to check.
 - `更新全部` updates every offered plugin one after another, Git rows
   included. One plugin's failure does not stop the others: the button names
   what failed and why, and can be pressed again.
 - The page's own **Refresh** also drives a per-row check, so badges and buttons
-  agree with the page; nothing is checked when the page merely opens.
+  agree with the page; nothing is checked when the page merely opens. Every
+  row is checked at the same time rather than one after another, so the page
+  answers in the time of the slowest check instead of the sum of all of them.
 - Status tags beside the name: `Latest`, `Update available`, and a warning tag
   when the newest version requires a newer DSH.
 - Git sources are compared with `git ls-remote`; the update installs the exact

@@ -38,6 +38,14 @@
     const knownListing = () => ({ phase: 'unknown' });
     const batchRunning = () => false;
     const clickRefresh = () => {};
+    // The copy the plugin uses, so the render shows the real wording.
+    const COPY = {
+      concurrencyButton: '并发数量',
+      concurrencyAll: '全部（不限并发）',
+      concurrencyAtMost: '最多 {count} 个',
+      updateAll: '更新全部',
+      updateAllCheckFirst: '点击后先检查全部插件',
+    };
     const setText = (element, text) => { element.textContent = text; };
     const setDisabled = (element, disabled) => { element.disabled = disabled; };
     // The bound and the copy are declared inside the plugin's own scope, so
@@ -56,10 +64,13 @@
       'setText',
       'setDisabled',
       'mode',
+      'readConcurrencyInput',
+      'CONCURRENCY_INPUT_ID',
+      'writeCheckConcurrency',
       helper + '\n' + body + '\nreturn paintToolbar;',
     )(
       0,
-      (key) => key,
+      (key) => COPY[key] ?? key,
       (element, name, value) => {
         if (value === null) element.removeAttribute(name);
         else element.setAttribute(name, value);
@@ -74,6 +85,9 @@
       (element, text) => { element.textContent = text; },
       (element, disabled) => { element.disabled = disabled; },
       'page',
+      (input) => Number(input.value) || 0,
+      'dsh-quick-update-concurrency',
+      () => {},
     )(
       document.querySelector('[data-plugin-toolbar]'),
     );

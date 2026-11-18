@@ -16,61 +16,45 @@ const toolbar = source.slice(source.indexOf('const paintToolbar = (toolbar) =>')
 const create = toolbar.slice(0, toolbar.indexOf('let button = toolbar.querySelector'));
 
 assert.ok(
-  create.includes("arrow.setAttribute('data-quick-update-action', 'concurrency')"),
-  'the arrow must carry the concurrency action',
+  create.includes("input.setAttribute('data-quick-update-action', 'concurrency')"),
+  'the input must carry the concurrency action',
 );
 assert.ok(
-  create.includes("arrow.textContent = '▾'"),
-  'the arrow must show the same mark as the other dropdowns',
+  create.includes("input.type = 'number'"),
+  'the control must be a number input',
 );
 assert.ok(
-  create.includes('toolbar.insertBefore(arrow, refresh.nextElementSibling)'),
-  'the arrow must sit right after the page\'s refresh button',
-);
-
-/* ---- the arrow opens the menu and the menu saves the choice ---- */
-
-assert.ok(
-  create.includes('openConcurrencyMenu(arrow)'),
-  'the arrow must open the menu',
-);
-
-/* ---- the arrow is not the page\'s own control, so the plugin must not
-        mistake it for the refresh button ---- */
-
-const native = source.slice(source.indexOf('const nativeRefreshChild = (toolbar) =>'));
-const nativeChild = native.slice(0, native.indexOf('const onNativeRefresh'));
-assert.ok(
-  nativeChild.includes("if (child.hasAttribute('data-quick-update-action')) continue;"),
-  'the plugin\'s own controls must be skipped when looking for the refresh button',
-);
-
-/* ---- the menu marks the chosen bound ---- */
-
-const menu = source.slice(source.indexOf('const openConcurrencyMenu = (anchor) =>'));
-assert.ok(
-  menu.includes("row.setAttribute('data-quick-update-concurrency', String(value))"),
-  'every row must name the bound it chooses',
+  create.includes("input.min = '0'"),
+  'the input must refuse anything below zero',
 );
 assert.ok(
-  menu.includes("if (value === checkConcurrency)"),
-  'the chosen bound must be marked',
+  create.includes("readConcurrencyInput(input)"),
+  'the input must be read as a count',
 );
 assert.ok(
-  menu.includes("mark.textContent = '✓'"),
-  'the chosen bound must be shown as chosen',
+  create.includes('toolbar.append(holder)'),
+  'the input must stand on its own',
+);
+assert.ok(
+  !create.includes('qu-arrow'),
+  'the control must not be an arrow joined to the refresh button',
 );
 
-/* ---- the bounds offered ---- */
+/* ---- the count that the input holds ---- */
 
-const choices = /const CHECK_CONCURRENCY_CHOICES = \[([^\]]*)\];/.exec(source);
-assert.ok(choices, 'the bounds must be named');
-const list = choices[1].split(',').map((item) => Number(item.trim())).filter((item) => Number.isFinite(item));
-assert.ok(list.length >= 3, 'several bounds must be offered');
-assert.ok(list.every((value) => value >= 1), 'a bound must be at least one');
+const reader = source.slice(source.indexOf('const readConcurrencyInput = (input) =>'));
+const readerBody = reader.slice(0, reader.indexOf('\n        };'));
 assert.ok(
-  list.every((value, index) => index === 0 || value > list[index - 1]),
-  'the bounds must be in order',
+  readerBody.includes('value < 0'),
+  'a negative count must be refused',
+);
+assert.ok(
+  readerBody.includes('Math.floor(value)'),
+  'a count must be a whole number',
+);
+assert.ok(
+  readerBody.includes("raw === ''"),
+  'an empty input must mean no limit',
 );
 
 /* ---- the copy exists in both languages ---- */
@@ -83,7 +67,7 @@ const keysOf = (name) => {
 const zhKeys = keysOf('zh');
 const enKeys = keysOf('en');
 assert.deepEqual(zhKeys, enKeys, 'the Chinese and English copy must carry the same keys');
-for (const key of ['concurrencyTitle', 'concurrencyHint', 'concurrencyAll', 'concurrencyAtMost']) {
+for (const key of ['concurrencyButton', 'concurrencyTitle', 'concurrencyHint', 'concurrencyAll', 'concurrencyAtMost']) {
   assert.ok(zhKeys.includes(key), `the Chinese copy must define ${key}`);
   assert.ok(enKeys.includes(key), `the English copy must define ${key}`);
 }

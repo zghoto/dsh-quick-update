@@ -36,11 +36,32 @@ const browser = BROWSERS[0];
 const page = readFileSync(join(here, 'render.html'), 'utf8');
 assert.ok(page.includes('data-quick-update-action'), 'the page must carry the toolbar');
 
-/* The server runs in the background; the check waits for it. */
+/* The server runs in the background; the check waits for it. The port is
+   picked at random, so a port another check left behind does not get in the
+   way. */
 const { spawn } = await import('node:child_process');
+
+/**
+ * A port nothing is listening on.
+ *
+ * @returns {Promise<number>} the port.
+ */
+async function freePort() {
+  const { createServer } = await import('node:net');
+  return new Promise((resolve, reject) => {
+    const probe = createServer();
+    probe.on('error', reject);
+    probe.listen(0, '127.0.0.1', () => {
+      const { port } = probe.address();
+      probe.close(() => { resolve(port); });
+    });
+  });
+}
+
+const port = await freePort();
 const server = spawn(
   process.platform === 'win32' ? 'python' : 'python3',
-  ['-m', 'http.server', '8973', '--bind', '127.0.0.1'],
+  ['-m', 'http.server', String(port), '--bind', '127.0.0.1'],
   { cwd: root, stdio: 'ignore', windowsHide: true },
 );
 
@@ -48,7 +69,7 @@ const server = spawn(
 async function waitForServer() {
   for (let attempt = 0; attempt < 40; attempt += 1) {
     try {
-      const response = await fetch('http://127.0.0.1:8973/test/render.html');
+      const response = await fetch(`http://127.0.0.1:${port}/test/render.html`);
       if (response.ok) return;
     } catch (_error) {
       /* not up yet */
@@ -67,23 +88,25 @@ try {
     '--no-sandbox',
     '--virtual-time-budget=6000',
     '--dump-dom',
-    'http://127.0.0.1:8973/test/render.html',
+    `http://127.0.0.1:${port}/test/render.html`,
   ], { encoding: 'utf8', timeout: 90000, windowsHide: true });
 
-  /* The arrow must be there, right after the page's own refresh button. */
-  const arrow = /<button[^>]*data-quick-update-action="concurrency"[^>]*>([\s\S]*?)<\/button>/.exec(output);
-  assert.ok(arrow, 'the concurrency arrow must be rendered');
-  assert.ok(arrow[1].includes('▾'), 'the arrow must show the dropdown mark');
-  assert.ok(arrow[0].includes('title='), 'the arrow must say what it does');
+  /* The input must be there, and it must be a number input. */
+  const input = /<input[^>]*data-quick-update-action="concurrency"[^>]*>/.exec(output);
+  assert.ok(input, 'the concurrency input must be rendered');
+  assert.ok(input[0].includes('type="number"'), 'the control must be a number input');
+  assert.ok(input[0].includes('min="0"'), 'the input must refuse anything below zero');
+  assert.ok(input[0].includes('title='), 'the input must say what it does in its title');
 
-  /* It must sit right after the page's refresh button. */
+  /* It stands on its own, not joined to the page's refresh button. */
   const toolbar = /<header[^>]*data-plugin-toolbar[^>]*>([\s\S]*?)<\/header>/.exec(output);
   assert.ok(toolbar, 'the toolbar must be rendered');
-  const children = [...toolbar[1].matchAll(/<button[^>]*>/g)];
-  const arrowIndex = children.findIndex((match) => match[0].includes('data-quick-update-action="concurrency"'));
+  const children = [...toolbar[1].matchAll(/<(?:button|input)[^>]*>/g)];
+  const inputIndex = children.findIndex((match) => match[0].includes('data-quick-update-action="concurrency"'));
+  assert.ok(inputIndex >= 0, 'the concurrency input must be in the toolbar');
   const refreshIndex = children.findIndex((match) => !match[0].includes('data-quick-update-action'));
   assert.ok(refreshIndex >= 0, 'the page\'s own refresh button must be there');
-  assert.equal(arrowIndex, refreshIndex + 1, 'the arrow must sit right after the refresh button');
+  assert.notEqual(inputIndex, refreshIndex + 1, 'the input must stand apart from the refresh button');
 
   console.log('toolbar render: all checks passed');
 } finally {

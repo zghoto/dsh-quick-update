@@ -160,25 +160,11 @@ assert.ok(
 const toolbar = extract('const paintToolbar = (toolbar) =>');
 assert.ok(
   toolbar.includes("data-quick-update-action', 'concurrency'"),
-  'the toolbar must carry the arrow that opens the setting',
+  'the toolbar must carry the control that opens the setting',
 );
 assert.ok(
-  toolbar.includes('openConcurrencyMenu(arrow)'),
-  'the arrow must open the menu',
-);
-
-const menu = extract('const openConcurrencyMenu = (anchor) =>');
-assert.ok(
-  menu.includes('CHECK_CONCURRENCY_CHOICES'),
-  'the menu must offer the bounds',
-);
-assert.ok(
-  menu.includes('writeCheckConcurrency(value)'),
-  'choosing a bound must save it',
-);
-assert.ok(
-  menu.includes("t('concurrencyAll')"),
-  'the menu must offer "all"',
+  toolbar.includes('readConcurrencyInput(input)'),
+  'the control must be read as a count',
 );
 
 console.log('parallel check: all checks passed');

@@ -18,6 +18,7 @@
 - **工具栏 `更新全部`**：逐个串行更新，显示 `更新中 n/N`。**Git 安装的插件也包含在内**（从新提交重装，失败自动装回原 commit）；按钮悬停会说明其中几个是 Git 重装。一个插件更新失败不会中断其余插件，失败的名字和原因会显示在按钮上，按钮可以再点一次重试。
 - **提交类更新的确认**：当待更新项里包含「只有新 Git 提交、没有发布新版本号」的插件时，会先弹一个确认：`全部更新` / `跳过这些插件` / `取消`。选「跳过」则只更新有正式版本的插件。
 - **跟随页面刷新**：点页面自带的 `刷新` 会触发本插件的逐行检查，**所有插件同时检查**（不是排队一个个来），每行显示「检查中…」，完成后按钮变蓝；不会在进入页面时偷偷检查。
+- **并发数量**：工具栏上的「并发数量」输入框决定同时检查几个插件，`0` 表示不限制（全部一起查），默认就是 `0`。只能填非负整数；网络吃不消时可以调小。
 - **同时检查的数量**：`刷新` 按钮右侧的下拉箭头（`▾`）可以设置一次最多同时检查几个插件，默认**全部**（不限制并发）。网络吃不消时可以调小，选择会被记住。
 - **名字右侧状态标签**：`最新`（灰）/ `可更新`（蓝，页面没自己打标签时补位）/ `可更新但最新版不兼容当前版本 DSH`（黄，悬停给出所需依赖）。
 - **页面模式下自动关闭原生更新框**：页面自己的更新确认框是带模糊遮罩的模态，插件在更新结束后（成功或失败）会主动关闭它，避免整页一直模糊。
@@ -91,9 +92,12 @@ page, including Git-installed plugins.
   agree with the page; nothing is checked when the page merely opens. Every
   row is checked at the same time rather than one after another, so the page
   answers in the time of the slowest check instead of the sum of all of them.
-- The dropdown arrow (`▾`) next to the page's **Refresh** chooses how many
-  checks run at once. The default is **all of them**; a smaller number is
-  there for a network that cannot take them all, and the choice is kept.
+- The **Concurrency** input in the toolbar says how many checks run at once.
+  It takes a whole number of zero or more: `0` means **all of them**, which is
+  the default. A smaller number is there for a network that cannot take them
+  all, and the choice is kept.
+- The controls appear with the page: the plugin waits for the page rather
+  than for a fixed moment, so nothing is missing on the first look.
 - Status tags beside the name: `Latest`, `Update available`, and a warning tag
   when the newest version requires a newer DSH.
 - Git sources are compared with `git ls-remote`; the update installs the exact
